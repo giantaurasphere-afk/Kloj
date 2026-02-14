@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For My Valentine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #ff4d6d;
+            --bg-color: #fff0f3;
+            --gold: #ffd700;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: #2d0010;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        /* --- LAYOUT --- */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; /* Hidden by default */
+            flex-direction: column; justify-content: center; align-items: center;
+            background: var(--bg-color);
+            z-index: 10;
+            padding: 20px;
+            text-align: center;
+        }
+        .screen.active { display: flex; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- BUTTONS --- */
+        .btn {
+            background: linear-gradient(45deg, #ff4d6d, #ff0a54);
+            border: 2px solid white;
+            padding: 12px 30px;
+            color: white;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 9999;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        .main-title { font-family: 'Dancing Script', cursive; font-size: 2.5rem; color: #d60036; margin-bottom: 20px; }
+
+        /* --- ELEMENTS --- */
+        .big-emoji { font-size: 5rem; animation: pulse 1.5s infinite; margin: 20px 0; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* Lock Screen */
+        #screen-lock { background: #111; color: var(--gold); }
+        .lock-box { border: 2px solid var(--gold); padding: 30px; border-radius: 15px; background: rgba(0,0,0,0.8); }
+        input { 
+            background: transparent; border: none; border-bottom: 2px solid var(--gold); 
+            color: white; font-size: 1.2rem; text-align: center; padding: 10px; outline: none; margin-bottom: 10px;
+        }
+
+        /* Game 1: Rhythm */
+        .game-area {
+            width: 200px; height: 200px; border: 5px solid #ff4d6d; border-radius: 50%;
+            position: relative; background: white; margin: 20px auto;
+        }
+        .needle {
+            width: 4px; height: 100px; background: black;
+            position: absolute; top: 50%; left: 50%;
+            transform-origin: top center; margin-top: -100px; margin-left: -2px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .stop-anim { animation-play-state: paused; }
+
+        /* Envelope */
+        .envelope {
+            width: 200px; height: 140px; background: #ff3333; position: relative;
+            margin: 20px auto; cursor: pointer;
+        }
+        .flap {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #ff6666; clip-path: polygon(0 0, 100% 0, 50% 50%);
+            transform-origin: top; transition: 0.5s; z-index: 5;
+        }
+        .letter {
+            position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px;
+            background: white; padding: 10px; font-size: 0.8rem;
+            transition: 0.5s; z-index: 2; opacity: 0;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+        }
+        .envelope.open .flap { transform: rotateX(180deg); opacity: 0; }
+        .envelope.open .letter { opacity: 1; transform: translateY(-60px); height: 200px; z-index: 10; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        /* Popups */
+        .popup { background: white; padding: 15px; border-radius: 10px; margin-top: 15px; box-shadow: 0 5px 10px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+
+    </style>
+</head>
+<body>
+
+    <div id="screen-lock" class="screen active">
+        <div class="lock-box">
+            <h1 style="font-family:'Dancing Script'; color:#ffd700;">Valentine's Vault</h1>
+            <p style="color: #888; margin-bottom: 10px;">Password Required</p>
+            <input type="password" id="pass" placeholder="Enter Code">
+            <div id="lock-msg" style="color: red; height: 20px;"></div>
+            <button class="btn" onclick="unlock()">UNLOCK</button>
+        </div>
+    </div>
+
+    <div id="screen-reveal" class="screen">
+        <h1 class="main-title">Happy Valentine's Day Babe!</h1>
+        <div class="big-emoji">💐🍫</div>
+        <p>I want to tell you something 🫠</p>
+        <button class="btn" onclick="show('screen-game1')">Sayy, Dear</button>
+    </div>
+
+    <div id="screen-game1" class="screen">
+        <h2>Catch My Heart!</h2>
+        <div class="game-area" onclick="stopGame1()">
+            <div style="position:absolute; top:0; left:50%; transform:translateX(-50%); font-size: 2rem;">❤️</div>
+            <div id="needle" class="needle"></div>
+        </div>
+        <p id="g1-msg" style="height: 20px; font-weight: bold;"></p>
+        <button id="g1-cont" class="btn hidden" onclick="show('screen-ask1')">Continue</button>
+    </div>
+
+    <div id="screen-ask1" class="screen">
+        <h1 class="main-title">Will you be my valentine? 🫠</h1>
+        <button class="btn" onclick="startDelayScene()">Let me think 🤔</button>
+    </div>
+
+    <div id="screen-delay" class="screen">
+        <div class="big-emoji">🤔💭</div>
+        <p>Thinking...</p>
+        <div id="delay-content"></div>
+    </div>
+
+    <div id="screen-choice" class="screen">
+        <div class="big-emoji">💝</div>
+        <h3>Choose one!</h3>
+        <button class="btn" onclick="show('screen-letter')">♡</button>
+        <button class="btn" onclick="show('screen-letter')">♡♡</button>
+        <button class="btn" onclick="show('screen-letter')">♡♡♡</button>
+    </div>
+
+    <div id="screen-letter" class="screen">
+        <div class="envelope" id="env" onclick="openEnv()">
+            <div class="flap"></div>
+            <div class="letter">
+                My Love,<br>
+                You are the most beautiful variable in my life's equation. I don't just want today, I want forever with you.<br>
+                I Love You! ❤️
+            </div>
+        </div>
+        <p id="tap-txt">Tap Envelope to Open</p>
+        <button id="letter-btn" class="btn hidden" onclick="show('screen-convince')">Continue</button>
+    </div>
+
+    <div id="screen-convince" class="screen">
+        <h2 class="main-title">Abhi tak convince nhi huye? 😭</h2>
+        <p>Please be my valentine 🤗</p>
+        <button class="btn" onclick="startScan()">Thora aur sabar karo 🤭</button>
+    </div>
+
+    <div id="screen-scan" class="screen">
+        <h2>Cuteness Scanner</h2>
+        <div class="big-emoji">🧐</div>
+        <div id="bars" style="width: 80%; text-align: left; margin-top: 20px;"></div>
+        <button id="scan-btn" class="btn hidden" onclick="show('screen-pickup1')">Scan Complete</button>
+    </div>
+
+    <div id="screen-pickup1" class="screen">
+        <div class="popup">I got to know that u have cigarette very often? 🤨</div>
+        <div id="p1-1">
+            <button class="btn" onclick="step('p1-1', 'p1-2')">Yeah, I don't think that's bad</button>
+        </div>
+        <div id="p1-2" class="hidden">
+            <div class="popup" style="color:red; font-weight:bold;">You are an addict and need to quit!!</div>
+            <button class="btn" onclick="step('p1-2', 'p1-3')">Why??</button>
+        </div>
+        <div id="p1-3" class="hidden">
+            <div class="popup" style="color:green;">Cause I am trying my best to be your favourite habit 😁</div>
+            <button class="btn" onclick="show('screen-photo4')">Continue</button>
+        </div>
+    </div>
+
+    <div id="screen-photo4" class="screen">
+        <div class="big-emoji">😍</div>
+        <h3>You look perfect!</h3>
+        <button class="btn" onclick="show('screen-pickup2')">Continue</button>
+    </div>
+
+    <div id="screen-pickup2" class="screen">
+        <div class="popup">I was doing an equation somedays ago!</div>
+        <div id="p2-1">
+            <button class="btn" onclick="step('p2-1', 'p2-2')">Oh okay!</button>
+        </div>
+        <div id="p2-2" class="hidden">
+            <div class="popup">Everything was logical, but I couldn't find the solution 😕</div>
+            <button class="btn" onclick="step('p2-2', 'p2-3')">You made a mistake?</button>
+        </div>
+        <div id="p2-3" class="hidden">
+            <div class="popup">No, I found the answer. You were the only variable I needed 🫠❤️</div>
+            <button class="btn" onclick="show('screen-final')">That's cute 🥰</button>
+        </div>
+    </div>
+
+    <div id="screen-final" class="screen">
+        <h2 class="main-title">So, one more time...<br>Will you be my Valentine? 🙂</h2>
+        <div style="margin-top:20px;">
+            <button class="btn" style="background:#28a745;" onclick="sheSaidYes()">YESSS 🫂</button>
+            <button id="btn-no" class="btn" style="background:#6c757d;" onclick="sheSaidNo()">No 😕</button>
+        </div>
+    </div>
+
+    <div id="screen-end" class="screen" style="background: black; color: white;">
+        <h1 style="color: red; font-size: 3rem;">I LOVE YOU!</h1>
+        <div class="big-emoji">💏</div>
+        <p>You made me the happiest person today.</p>
+        
+        <p style="margin-top: 40px; font-size: 1.2rem; font-family: 'Dancing Script', cursive; color: #ff4d6d;">from rudraksh ❤️</p>
+    </div>
+
+    <script>
+        // --- NAVIGATION ---
+        function show(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function step(hideId, showId) {
+            document.getElementById(hideId).classList.add('hidden');
+            document.getElementById(showId).classList.remove('hidden');
+        }
+
+        // --- LOCK ---
+        function unlock() {
+            const val = document.getElementById('pass').value.toLowerCase().trim();
+            if(val === 'loveyouforever') {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                show('screen-reveal');
+            } else {
+                document.getElementById('lock-msg').innerText = "Wrong Password!";
+            }
+        }
+
+        // --- GAME 1 ---
+        function stopGame1() {
+            document.getElementById('needle').classList.add('stop-anim');
+            document.getElementById('g1-msg').innerText = "Perfect! ❤️";
+            confetti({ particleCount: 30, origin: { y: 0.5 } });
+            document.getElementById('g1-cont').classList.remove('hidden');
+        }
+
+        // --- DELAY SCENE ---
+        function startDelayScene() {
+            show('screen-delay');
+            // 5 second timer simulation
+            setTimeout(() => {
+                document.getElementById('delay-content').innerHTML = `
+                    <div class="popup">Abhi bhi sochna hai kya? 🥺</div>
+                    <button class="btn" onclick="show('screen-choice')">Itni jaldi haan nhi bolungi 🤭</button>
+                `;
+            }, 5000);
+        }
+
+        // --- ENVELOPE ---
+        function openEnv() {
+            document.getElementById('env').classList.add('open');
+            document.getElementById('tap-txt').style.display = 'none';
+            setTimeout(() => {
+                document.getElementById('letter-btn').classList.remove('hidden');
+            }, 3000);
+        }
+
+        // --- SCANNER ---
+        function startScan() {
+            show('screen-scan');
+            const bars = document.getElementById('bars');
+            const params = ["Cuteness", "Smile", "Love"];
+            let html = "";
+            
+            params.forEach((p, i) => {
+                html += `<div style="margin:10px 0;">${p}<div style="height:10px; background:#eee; width:100%; border-radius:5px;"><div id="bar-${i}" style="height:100%; width:0%; background:var(--primary); border-radius:5px; transition: width 1s;"></div></div></div>`;
+            });
+            bars.innerHTML = html;
+
+            let delay = 500;
+            params.forEach((p, i) => {
+                setTimeout(() => {
+                    document.getElementById(`bar-${i}`).style.width = "100%";
+                    confetti({ particleCount: 20, origin: { x: 0.5, y: 0.6 } });
+                }, delay);
+                delay += 1000;
+            });
+
+            setTimeout(() => {
+                document.getElementById('scan-btn').classList.remove('hidden');
+            }, delay);
+        }
+
+        // --- FINAL ---
+        function sheSaidNo() {
+            alert("Warning: Wrong answer! ❤️");
+            const btn = document.getElementById('btn-no');
+            btn.innerText = "Go Back";
+            btn.onclick = () => {
+                btn.innerText = "No 😕";
+                btn.onclick = sheSaidNo;
+            };
+        }
+        function sheSaidYes() {
+            const end = Date.now() + 5000;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+            show('screen-end');
+        }
+
+    </script>
+</body>
+</html>
